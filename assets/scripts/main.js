@@ -2,7 +2,6 @@ const config = {
   width: 4000,
   height: 2000,
   type: Phaser.AUTO,
-  parent: "phaser-example",
   scene: {
     create: create,
   },
@@ -38,8 +37,8 @@ function create() {
       let y = points[idx].y;
       const width = point.x - x;
       const height = point.y - y;
-      const subPoints = [];
-      for (let index = 0; index < 4; ++index) {
+      let subPoints = [];
+      for (let index = 0; index < 5; ++index) {
         const newX = x + width / 5;
         const newY = y + height / 5;
         subPoints.push({ x: newX, y: newY });
@@ -47,97 +46,44 @@ function create() {
         y = newY;
       }
       subPoints.push(point);
-      injectFractalSeed(subPoints);
-      newPoints.push(...subPoints);
+      subPoints = injectFractalSeed(subPoints);
+      newPoints.push(points[idx], ...subPoints);
     });
-    // console.log(newPoints);
+    console.log(newPoints);
     return newPoints;
   };
 
   const injectFractalSeed = (subPoints) => {
     console.log(subPoints);
-    const xDiff1 = subPoints[2].x - subPoints[1].x;
-    const yDiff1 = subPoints[2].y - subPoints[1].y;
-    const xDiff2 = subPoints[4].x - subPoints[3].x;
-    const yDiff2 = subPoints[4].y - subPoints[3].y;
-    let firstInjection = [];
-    let secondInjection = [];
-    firstInjection.push({
-      x: subPoints[1].x + yDiff1,
-      y: subPoints[1].y - xDiff1,
-    });
-    firstInjection.push({
-      x: subPoints[2].x + yDiff1,
-      y: subPoints[2].y - xDiff1,
-    });
-    secondInjection.push({
-      x: subPoints[3].x - yDiff2,
-      y: subPoints[3].y + xDiff2,
-    });
-    secondInjection.push({
-      x: subPoints[4].x - yDiff2,
-      y: subPoints[4].y + xDiff2,
-    });
-    subPoints.splice(1, 0, ...firstInjection);
-    subPoints.splice(5, 0, ...secondInjection);
+    const newSubPoints = subPoints.slice();
+    const xDiff1 = subPoints[1].x - subPoints[0].x;
+    const yDiff1 = subPoints[1].y - subPoints[0].y;
+    const xDiff2 = subPoints[3].x - subPoints[2].x;
+    const yDiff2 = subPoints[3].y - subPoints[2].y;
+    let firstInjection = [
+      {
+        x: subPoints[0].x + yDiff1,
+        y: subPoints[0].y - xDiff1,
+      },
+      {
+        x: subPoints[1].x + yDiff1,
+        y: subPoints[1].y - xDiff1,
+      },
+    ];
+    let secondInjection = [
+      {
+        x: subPoints[2].x - yDiff2,
+        y: subPoints[2].y + xDiff2,
+      },
+      {
+        x: subPoints[3].x - yDiff2,
+        y: subPoints[3].y + xDiff2,
+      },
+    ];
+    newSubPoints.splice(1, 0, ...firstInjection);
+    newSubPoints.splice(5, 0, ...secondInjection);
+    return newSubPoints;
   };
-  //   let firstLine = subLines[1];
-  //   let secondLine = subLines[3];
-  //   const xDiff = firstLine.endX - firstLine.startX;
-  //   const yDiff = firstLine.endY - firstLine.startY;
-  //   let firstInjection = [];
-  //   let secondInjection = [];
-  //   if (xDiff) {
-  //     _pushNewLines(firstInjection, firstLine, {
-  //       startX: firstLine.startX,
-  //       startY: firstLine.startY - xDiff,
-  //       endX: firstLine.endX,
-  //       endY: firstLine.startY - xDiff,
-  //     });
-  //     _pushNewLines(secondInjection, secondLine, {
-  //       startX: secondLine.startX,
-  //       startY: secondLine.startY + xDiff,
-  //       endX: secondLine.endX,
-  //       endY: secondLine.startY + xDiff,
-  //     });
-  //   } else {
-  //     _pushNewLines(firstInjection, firstLine, {
-  //       startX: firstLine.startX + yDiff,
-  //       startY: firstLine.startY,
-  //       endX: firstLine.startX + yDiff,
-  //       endY: firstLine.endY,
-  //     });
-  //     _pushNewLines(secondInjection, secondLine, {
-  //       startX: secondLine.startX - yDiff,
-  //       startY: secondLine.startY,
-  //       endX: secondLine.startX - yDiff,
-  //       endY: secondLine.endY,
-  //     });
-  //   }
-  //   subLines.splice(1, 1, ...firstInjection);
-  //   subLines.splice(5, 1, ...secondInjection);
-  // };
-
-  // const _pushNewLines = (injection, prevLine, mediumnNewLine) => {
-  //   injection.push({
-  //     startX: prevLine.startX,
-  //     startY: prevLine.startY,
-  //     endX: mediumnNewLine.startX,
-  //     endY: mediumnNewLine.startY,
-  //   });
-  //   injection.push({
-  //     startX: mediumnNewLine.startX,
-  //     startY: mediumnNewLine.startY,
-  //     endX: mediumnNewLine.endX,
-  //     endY: mediumnNewLine.endY,
-  //   });
-  //   injection.push({
-  //     startX: mediumnNewLine.endX,
-  //     startY: mediumnNewLine.endY,
-  //     endX: prevLine.endX,
-  //     endY: prevLine.endY,
-  //   });
-  // };
 
   const drawFractal = (points) => {
     graphics.fillStyle(color2, 1.0);
@@ -177,7 +123,6 @@ function create() {
   this.input.on("pointerdown", () => redraw(true));
   colorPicker1.onchange = () => {
     color1 = parseInt(colorPicker1.value.slice(1), 16);
-    console.log(color1);
     redraw();
   };
   colorPicker2.onchange = () => {

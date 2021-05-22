@@ -9,16 +9,12 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-const initLine = {
-  startX: 0,
-  startY: config.height / 2,
-  endX: config.width,
-  endY: config.height / 2,
-};
+const startPoint = { x: 0, y: config.height / 2 };
+const endPoint = { x: config.width, y: config.height / 2 };
 const maxIterations = 5;
 let iterations = 0;
 
-let lines = [initLine];
+let points = [startPoint, endPoint];
 let color1 = 0xffff00;
 let color2 = 0x550055;
 
@@ -35,92 +31,120 @@ function create() {
     graphics.fillRect(0, 0, config.width, config.height);
   };
 
-  const fractalize = (lines, randomProportions = false) => {
-    const newLines = [];
-    lines.forEach((line, idx) => {
-      let x = line.startX;
-      let y = line.startY;
-      const width = line.endX - line.startX;
-      const height = line.endY - line.startY;
-      const subLines = [];
-      for (let index = 0; index < 5; ++index) {
+  const fractalize = (points) => {
+    const newPoints = [];
+    points.slice(1).forEach((point, idx) => {
+      let x = points[idx].x;
+      let y = points[idx].y;
+      const width = point.x - x;
+      const height = point.y - y;
+      const subPoints = [];
+      for (let index = 0; index < 4; ++index) {
         const newX = x + width / 5;
         const newY = y + height / 5;
-        subLines.push({ startX: x, startY: y, endX: newX, endY: newY });
+        subPoints.push({ x: newX, y: newY });
         x = newX;
         y = newY;
       }
-      injectFractalSeed(subLines);
-      newLines.push(...subLines);
+      subPoints.push(point);
+      injectFractalSeed(subPoints);
+      newPoints.push(...subPoints);
     });
-    return newLines;
+    // console.log(newPoints);
+    return newPoints;
   };
 
-  const injectFractalSeed = (subLines) => {
-    let firstLine = subLines[1];
-    let secondLine = subLines[3];
-    const xDiff = firstLine.endX - firstLine.startX;
-    const yDiff = firstLine.endY - firstLine.startY;
+  const injectFractalSeed = (subPoints) => {
+    console.log(subPoints);
+    const xDiff1 = subPoints[2].x - subPoints[1].x;
+    const yDiff1 = subPoints[2].y - subPoints[1].y;
+    const xDiff2 = subPoints[4].x - subPoints[3].x;
+    const yDiff2 = subPoints[4].y - subPoints[3].y;
     let firstInjection = [];
     let secondInjection = [];
-    if (xDiff) {
-      _pushNewLines(firstInjection, firstLine, {
-        startX: firstLine.startX,
-        startY: firstLine.startY - xDiff,
-        endX: firstLine.endX,
-        endY: firstLine.startY - xDiff,
-      });
-      _pushNewLines(secondInjection, secondLine, {
-        startX: secondLine.startX,
-        startY: secondLine.startY + xDiff,
-        endX: secondLine.endX,
-        endY: secondLine.startY + xDiff,
-      });
-    } else {
-      _pushNewLines(firstInjection, firstLine, {
-        startX: firstLine.startX + yDiff,
-        startY: firstLine.startY,
-        endX: firstLine.startX + yDiff,
-        endY: firstLine.endY,
-      });
-      _pushNewLines(secondInjection, secondLine, {
-        startX: secondLine.startX - yDiff,
-        startY: secondLine.startY,
-        endX: secondLine.startX - yDiff,
-        endY: secondLine.endY,
-      });
-    }
-    subLines.splice(1, 1, ...firstInjection);
-    subLines.splice(5, 1, ...secondInjection);
+    firstInjection.push({
+      x: subPoints[1].x + yDiff1,
+      y: subPoints[1].y - xDiff1,
+    });
+    firstInjection.push({
+      x: subPoints[2].x + yDiff1,
+      y: subPoints[2].y - xDiff1,
+    });
+    secondInjection.push({
+      x: subPoints[3].x - yDiff2,
+      y: subPoints[3].y + xDiff2,
+    });
+    secondInjection.push({
+      x: subPoints[4].x - yDiff2,
+      y: subPoints[4].y + xDiff2,
+    });
+    subPoints.splice(1, 0, ...firstInjection);
+    subPoints.splice(5, 0, ...secondInjection);
   };
+  //   let firstLine = subLines[1];
+  //   let secondLine = subLines[3];
+  //   const xDiff = firstLine.endX - firstLine.startX;
+  //   const yDiff = firstLine.endY - firstLine.startY;
+  //   let firstInjection = [];
+  //   let secondInjection = [];
+  //   if (xDiff) {
+  //     _pushNewLines(firstInjection, firstLine, {
+  //       startX: firstLine.startX,
+  //       startY: firstLine.startY - xDiff,
+  //       endX: firstLine.endX,
+  //       endY: firstLine.startY - xDiff,
+  //     });
+  //     _pushNewLines(secondInjection, secondLine, {
+  //       startX: secondLine.startX,
+  //       startY: secondLine.startY + xDiff,
+  //       endX: secondLine.endX,
+  //       endY: secondLine.startY + xDiff,
+  //     });
+  //   } else {
+  //     _pushNewLines(firstInjection, firstLine, {
+  //       startX: firstLine.startX + yDiff,
+  //       startY: firstLine.startY,
+  //       endX: firstLine.startX + yDiff,
+  //       endY: firstLine.endY,
+  //     });
+  //     _pushNewLines(secondInjection, secondLine, {
+  //       startX: secondLine.startX - yDiff,
+  //       startY: secondLine.startY,
+  //       endX: secondLine.startX - yDiff,
+  //       endY: secondLine.endY,
+  //     });
+  //   }
+  //   subLines.splice(1, 1, ...firstInjection);
+  //   subLines.splice(5, 1, ...secondInjection);
+  // };
 
-  const _pushNewLines = (injection, prevLine, mediumnNewLine) => {
-    injection.push({
-      startX: prevLine.startX,
-      startY: prevLine.startY,
-      endX: mediumnNewLine.startX,
-      endY: mediumnNewLine.startY,
-    });
-    injection.push({
-      startX: mediumnNewLine.startX,
-      startY: mediumnNewLine.startY,
-      endX: mediumnNewLine.endX,
-      endY: mediumnNewLine.endY,
-    });
-    injection.push({
-      startX: mediumnNewLine.endX,
-      startY: mediumnNewLine.endY,
-      endX: prevLine.endX,
-      endY: prevLine.endY,
-    });
-  };
+  // const _pushNewLines = (injection, prevLine, mediumnNewLine) => {
+  //   injection.push({
+  //     startX: prevLine.startX,
+  //     startY: prevLine.startY,
+  //     endX: mediumnNewLine.startX,
+  //     endY: mediumnNewLine.startY,
+  //   });
+  //   injection.push({
+  //     startX: mediumnNewLine.startX,
+  //     startY: mediumnNewLine.startY,
+  //     endX: mediumnNewLine.endX,
+  //     endY: mediumnNewLine.endY,
+  //   });
+  //   injection.push({
+  //     startX: mediumnNewLine.endX,
+  //     startY: mediumnNewLine.endY,
+  //     endX: prevLine.endX,
+  //     endY: prevLine.endY,
+  //   });
+  // };
 
-  const drawFractal = (lines) => {
+  const drawFractal = (points) => {
     graphics.fillStyle(color2, 1.0);
     graphics.beginPath();
-    graphics.moveTo(lines[0].startX, lines[0].startY);
-    lines.forEach((line) => {
-      graphics.lineTo(line.endX, line.endY);
+    graphics.moveTo(points[0].x, points[0].y);
+    points.slice(1).forEach((point) => {
+      graphics.lineTo(point.x, point.y);
     });
     graphics.lineTo(config.width, config.height);
     graphics.lineTo(0, config.height);
@@ -133,9 +157,9 @@ function create() {
   const draw = (iterations) => {
     drawStartRectangles();
     for (let iteration = iterations; iteration > 0; --iteration) {
-      lines = fractalize(lines);
+      points = fractalize(points);
     }
-    drawFractal(lines);
+    drawFractal(points);
   };
 
   const redraw = (increment = false) => {
@@ -145,7 +169,7 @@ function create() {
       iterations++;
       if (iterations > maxIterations) iterations = 0;
     }
-    lines = [initLine];
+    points = [startPoint, endPoint];
     draw(iterations);
   };
 

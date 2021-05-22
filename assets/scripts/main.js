@@ -6,27 +6,36 @@ const config = {
     create: create,
   },
 };
-
 const game = new Phaser.Game(config);
-const startPoint = { x: 0, y: config.height / 2 };
-const endPoint = { x: config.width, y: config.height / 2 };
-const maxIterations = 5;
-let iterations = 0;
 
-let points = [startPoint, endPoint];
-let color1 = 0xffff00;
-let color2 = 0x550055;
+const frConf = {
+  startPoint: { x: 0, y: config.height / 2 },
+  endPoint: { x: config.width, y: config.height / 2 },
+  maxIterations: 4,
+  color1: 0xffff00,
+  color2: 0x550055,
+  firstInjectionIndex: 1,
+  secondInjectionIndex: 5,
+};
+
+let iterations = 0;
+let points = [frConf.startPoint, frConf.endPoint];
 
 const colorPicker1 = document.getElementById("colorPicker1");
 const colorPicker2 = document.getElementById("colorPicker2");
-colorPicker1.value = `#${color1.toString(16)}`;
-colorPicker2.value = `#${color2.toString(16)}`;
+colorPicker1.value = `#${frConf.color1.toString(16)}`;
+colorPicker2.value = `#${frConf.color2.toString(16)}`;
+
+const inj1 = document.getElementById("inj1");
+const inj2 = document.getElementById("inj2");
+inj1.value = frConf.firstInjectionIndex;
+inj2.value = frConf.secondInjectionIndex;
 
 function create() {
   let graphics = this.add.graphics();
 
   const drawStartRectangles = () => {
-    graphics.fillStyle(color1, 1);
+    graphics.fillStyle(frConf.color1, 1);
     graphics.fillRect(0, 0, config.width, config.height);
   };
 
@@ -38,19 +47,26 @@ function create() {
       const width = point.x - x;
       const height = point.y - y;
       let subPoints = [];
-      for (let index = 0; index < 5; ++index) {
-        const newX = x + width / 5;
-        const newY = y + height / 5;
-        subPoints.push({ x: newX, y: newY });
-        x = newX;
-        y = newY;
-      }
+      [1, 2, 3, 4].forEach((index) => {
+        subPoints.push({
+          x: x + (width / 5) * index,
+          y: y + (height / 5) * index,
+        });
+      });
       subPoints.push(point);
       subPoints = injectFractalSeed(subPoints);
       newPoints.push(points[idx], ...subPoints);
     });
     console.log(newPoints);
     return newPoints;
+  };
+
+  getSeed = () => {
+    const seed = [];
+    for (let i = 0; i < 4; i++) {
+      seed.push(Math.random() * 5);
+    }
+    return seed.sort();
   };
 
   const injectFractalSeed = (subPoints) => {
@@ -80,13 +96,13 @@ function create() {
         y: subPoints[3].y + xDiff2,
       },
     ];
-    newSubPoints.splice(1, 0, ...firstInjection);
-    newSubPoints.splice(5, 0, ...secondInjection);
+    newSubPoints.splice(frConf.firstInjectionIndex, 0, ...firstInjection);
+    newSubPoints.splice(frConf.secondInjectionIndex, 0, ...secondInjection);
     return newSubPoints;
   };
 
   const drawFractal = (points) => {
-    graphics.fillStyle(color2, 1.0);
+    graphics.fillStyle(frConf.color2, 1.0);
     graphics.beginPath();
     graphics.moveTo(points[0].x, points[0].y);
     points.slice(1).forEach((point) => {
@@ -113,20 +129,28 @@ function create() {
     graphics = this.add.graphics();
     if (increment) {
       iterations++;
-      if (iterations > maxIterations) iterations = 0;
+      if (iterations > frConf.maxIterations) iterations = 0;
     }
-    points = [startPoint, endPoint];
+    points = [frConf.startPoint, frConf.endPoint];
     draw(iterations);
   };
 
   draw(iterations);
   this.input.on("pointerdown", () => redraw(true));
   colorPicker1.onchange = () => {
-    color1 = parseInt(colorPicker1.value.slice(1), 16);
+    frConf.color1 = parseInt(colorPicker1.value.slice(1), 16);
     redraw();
   };
   colorPicker2.onchange = () => {
-    color2 = parseInt(colorPicker2.value.slice(1), 16);
+    frConf.color2 = parseInt(colorPicker2.value.slice(1), 16);
+    redraw();
+  };
+  inj1.onchange = () => {
+    frConf.firstInjectionIndex = +inj1.value;
+    redraw();
+  };
+  inj2.onchange = () => {
+    frConf.secondInjectionIndex = +inj2.value;
     redraw();
   };
 }
